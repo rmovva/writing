@@ -20,6 +20,9 @@ export OAI_RLHF=your_openai_api_key  # needed for generation
 
 ```
 python scripts/fetch_openings.py --limit 100 --seed 123 --max-words 500
+# optionally clean passages to strip Gutenberg metadata/TOCs via GPT-5-nano
+# export OAI_RLHF=your_key
+# python scripts/fetch_openings.py --limit 100 --seed 123 --clean-with-llm
 ```
 
 Outputs:

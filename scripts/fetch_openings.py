@@ -3,6 +3,7 @@
 The script builds a metadata file and a matching openings file:
 - data/book_metadata.json: metadata for the selected books
 - data/original_openings.jsonl: first ~500 words of each book
+Optionally, passages can be cleaned via GPT to strip metadata/TOCs.
 """
 
 from __future__ import annotations
@@ -12,10 +13,12 @@ import json
 import random
 import re
 import sys
+import os
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
+from openai import OpenAI
 import requests
 from tqdm import tqdm
 
@@ -149,6 +152,40 @@ def extract_opening(text: str, max_words: int = DEFAULT_WORDS) -> str:
     return "\n\n".join(selected)
 
 
+def clean_with_llm(passage: str, client: OpenAI) -> str:
+    """Use GPT-5-nano to strip TOCs/metadata and keep only prose."""
+    system_prompt = (
+        "You are a cleaner that receives the opening of a public-domain book. "
+        "Remove any metadata, table of contents, prefaces, headings, or boilerplate. "
+        "Return only the first prose passage that starts the story, keeping paragraphs intact. "
+        "Do not add commentary or labels."
+    )
+    try:
+        resp = client.responses.create(
+            model="gpt-5-nano",
+            input=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": passage},
+            ],
+            reasoning={"effort": "minimal"},
+        )
+        cleaned = ""
+        if hasattr(resp, "output_text"):
+            cleaned = resp.output_text or ""
+        else:
+            output = getattr(resp, "output", None) or []
+            if isinstance(output, list):
+                for item in output:
+                    for content in item.get("content", []):
+                        if content.get("type") == "output_text":
+                            cleaned = content.get("text", "")
+                            break
+        return cleaned.strip() or passage
+    except Exception as exc:
+        print(f"LLM clean failed, keeping raw passage: {exc}", file=sys.stderr)
+        return passage
+
+
 def padded_description(subjects: Iterable[str]) -> str:
     tokens: List[str] = []
     for subject in subjects:
@@ -258,6 +295,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="Total number of books to collect.")
     parser.add_argument("--max-words", type=int, default=DEFAULT_WORDS, help="Approximate word count for openings.")
     parser.add_argument("--seed", type=int, default=42, help="Shuffle seed when trimming the list.")
+    parser.add_argument("--clean-with-llm", action="store_true", help="Use GPT-5-nano to clean passages.")
     return parser.parse_args(argv)
 
 
@@ -269,11 +307,20 @@ def main(argv: Optional[List[str]] = None) -> None:
         sys.exit(1)
     save_metadata(records)
 
+    client = None
+    if args.clean_with_llm:
+        api_key = os.getenv("OAI_RLHF")
+        if not api_key:
+            print("OAI_RLHF not set; cannot clean with LLM. Proceeding without cleaning.", file=sys.stderr)
+        else:
+            client = OpenAI(api_key=api_key)
+
     openings: Dict[int, str] = {}
     print(f"Fetching openings for {len(records)} books...")
     for record in tqdm(records, desc="Downloading texts"):
         try:
-            openings[record.book_id] = fetch_opening_text(record, args.max_words)
+            raw = fetch_opening_text(record, args.max_words)
+            openings[record.book_id] = clean_with_llm(raw, client) if client else raw
         except Exception as exc:
             print(f"Failed to fetch {record.title} ({record.book_id}): {exc}", file=sys.stderr)
             openings[record.book_id] = ""
