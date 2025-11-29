@@ -1,3 +1,7 @@
+AGENTS.md
+.DS_Store
+data/large/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -98,6 +102,7 @@ ipython_config.py
 #   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
 #   This is especially recommended for binary packages to ensure reproducibility, and is more
 #   commonly ignored for libraries.
+#   https://github.com/astral-sh/uv/blob/main/docs/guides/projects.mdx#uv-in-your-python-project
 #uv.lock
 
 # poetry
@@ -171,14 +176,14 @@ cython_debug/
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
+#  and can be added to the global gitignore or merged into this file.  However, if you prefer,
+#  you could uncomment the following to ignore the entire idea folder.
 #.idea/
 
 # Abstra
 # Abstra is an AI-powered process automation framework.
 # Ignore directories containing user credentials, local state, and settings.
-# Learn more at https://abstra.io/docs
+# Learn more at https://docs.abstra.io
 .abstra/
 
 # Visual Studio Code
@@ -200,8 +205,3 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
-
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
