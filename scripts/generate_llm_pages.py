@@ -1,4 +1,4 @@
-"""Generate first pages with GPT-5.1 to mirror the collected openings."""
+"""Generate first passages with GPT-5.1 to mirror the collected openings."""
 
 from __future__ import annotations
 
@@ -55,10 +55,10 @@ def extract_text(response) -> str:
 
 def build_prompt(entry: Dict) -> str:
     return (
-        f"Write the first page of a book in the style of {entry['author']}'s "
-        f"{entry['title']}. Use approximately 500 words. Even if the first page is in "
+        f"Write the first passage of a book in the style of {entry['author']}'s "
+        f"{entry['title']}. Use approximately 500 words. Even if the first passage is in "
         f"your training data, make sure not to copy it exactly; write a similarly-styled "
-        f"first page yourself."
+        f"first passage yourself."
     )
 
 

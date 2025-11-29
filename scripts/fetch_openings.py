@@ -1,4 +1,4 @@
-"""Collect opening pages for a set of public-domain novels via Gutendex.
+"""Collect opening passages for a set of public-domain novels via Gutendex.
 
 The script builds a metadata file and a matching openings file:
 - data/book_metadata.json: metadata for the selected books
