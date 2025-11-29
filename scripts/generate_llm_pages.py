@@ -5,9 +5,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, List, Optional
 
 from openai import OpenAI
 from tqdm import tqdm
@@ -17,16 +16,6 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 ORIGINAL_PATH = DATA_DIR / "original_openings.jsonl"
 GENERATED_PATH = DATA_DIR / "generated_openings.jsonl"
 MODEL_NAME = "gpt-5.1"
-
-
-def subject_summary(subjects: Iterable[str] | None, fallback: str | None = None) -> str:
-    if subjects:
-        cleaned = [s.strip() for s in subjects if s and s.strip()]
-        if cleaned:
-            return ", ".join(cleaned[:10])
-    if fallback:
-        return fallback.strip()
-    return "unspecified subjects"
 
 
 def load_originals() -> List[Dict]:
@@ -64,13 +53,11 @@ def extract_text(response) -> str:
 
 
 def build_prompt(entry: Dict) -> str:
-    subjects = subject_summary(entry.get("subjects"), fallback=entry.get("description"))
     return (
         f"Write the first page of a book in the style of {entry['author']}'s "
-        f"{entry['title']}. Use approximately 500 words. As a reminder, the subject "
-        f"material of this book includes: {subjects}. Even if the first page is in "
-        f"your training data, make sure not to copy it exactly; write a "
-        f"similarly-styled first page yourself."
+        f"{entry['title']}. Use approximately 500 words. Even if the first page is in "
+        f"your training data, make sure not to copy it exactly; write a similarly-styled "
+        f"first page yourself."
     )
 
 
@@ -112,7 +99,6 @@ def generate(max_records: Optional[int] = None, overwrite: bool = False) -> None
             "book_id": entry["book_id"],
             "author": entry["author"],
             "title": entry["title"],
-            "subjects_used": subjects,
             "prompt": prompt,
             "model": MODEL_NAME,
             "gpt_opening": generated_text,

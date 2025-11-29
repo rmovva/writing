@@ -3,7 +3,7 @@
 This repo builds a simple experiment comparing the first page of public-domain novels with GPT-written counterparts. The pipeline is split into three scripts:
 
 1) **Fetch openings**: grab the first ~500 words of ~100 lesser-known works by famous authors from Project Gutenberg (via Gutendex).
-2) **Generate model pages**: ask `gpt-5.1` (key from `$OAI_RLHF`) to write similarly-styled first pages, using the book’s Gutendex subjects (comma-separated, up to 10) in the prompt.
+2) **Generate model pages**: ask `gpt-5.1` (key from `$OAI_RLHF`) to write similarly-styled first pages.
 3) **Run the demo**: play through 10 random A/B pairs, guess which is human vs GPT, then review the answers.
 
 ## Setup
