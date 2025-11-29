@@ -103,7 +103,7 @@ def generate(max_records: Optional[int] = None, overwrite: bool = False) -> None
             model=MODEL_NAME,
             input=[{"role": "user", "content": prompt}],
             reasoning={"effort": "none"},
-            verbosity="low",
+            text={"verbosity": "low"},
         )
         generated_text = extract_text(response)
         record = {
