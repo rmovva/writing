@@ -158,6 +158,7 @@ def clean_with_llm(passage: str, client: OpenAI) -> str:
         "You are a cleaner that receives the opening of a public-domain book. "
         "Remove any metadata, table of contents, prefaces, headings, or boilerplate. "
         "Return only the first prose passage that starts the story, keeping paragraphs intact. "
+        "Merge wrapped lines inside paragraphs so each paragraph is a contiguous block of text. "
         "Do not add commentary or labels."
     )
     try:
