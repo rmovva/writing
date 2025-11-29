@@ -30,12 +30,12 @@ The script filters out the best-known titles per author and removes Gutenberg in
 ## 2) Generate GPT-written pages
 
 ```
-python scripts/generate_llm_pages.py --max-records 100
+python scripts/generate_llm_pages.py --max-records 100 --workers 30
 ```
 
 Notes:
 - Uses `model="gpt-5.1"` with `reasoning_effort="low"` and `verbosity="low"`.
-- Progress is shown via `tqdm`; reruns skip already-generated entries unless `--overwrite` is set.
+- Progress is shown via `tqdm`; reruns skip already-generated entries unless `--overwrite` is set. Calls run in parallel (default 30 workers).
 - Output lives in `data/generated_openings.jsonl` with prompts and the generated text.
 
 ## 3) Run the A/B guessing demo

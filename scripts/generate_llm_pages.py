@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import os
 from pathlib import Path
@@ -75,27 +76,28 @@ def write_records(records: List[Dict]) -> None:
             f.write(json.dumps(record) + "\n")
 
 
-def generate(max_records: Optional[int] = None, overwrite: bool = False) -> None:
+def generate(max_records: Optional[int] = None, overwrite: bool = False, workers: int = 30) -> None:
     originals = load_originals()
     existing_map = load_existing()
     client = make_client()
 
     to_process = originals[: max_records or len(originals)]
-    results: List[Dict] = []
-    for entry in tqdm(to_process, desc="Generating pages"):
-        key = str(entry["book_id"])
-        if not overwrite and key in existing_map:
-            results.append(existing_map[key])
-            continue
+    results: Dict[int, Dict] = {}
+    pending: List[tuple[int, Dict]] = []
+
+    def run_one(entry: Dict) -> Dict:
         prompt = build_prompt(entry)
-        response = client.responses.create(
-            model=MODEL_NAME,
-            input=[{"role": "user", "content": prompt}],
-            reasoning={"effort": "low"},
-            text={"verbosity": "low"},
-        )
-        generated_text = extract_text(response)
-        record = {
+        try:
+            response = client.responses.create(
+                model=MODEL_NAME,
+                input=[{"role": "user", "content": prompt}],
+                reasoning={"effort": "low"},
+                text={"verbosity": "low"},
+            )
+            generated_text = extract_text(response)
+        except Exception as exc:  # keep going on API errors
+            generated_text = f"ERROR: {exc}"
+        return {
             "book_id": entry["book_id"],
             "author": entry["author"],
             "title": entry["title"],
@@ -103,28 +105,42 @@ def generate(max_records: Optional[int] = None, overwrite: bool = False) -> None
             "model": MODEL_NAME,
             "gpt_opening": generated_text,
         }
-        results.append(record)
-        write_records(results)
 
-    # Ensure existing entries not touched are preserved if max_records is smaller.
+    for idx, entry in enumerate(to_process):
+        key = str(entry["book_id"])
+        if not overwrite and key in existing_map:
+            results[idx] = existing_map[key]
+        else:
+            pending.append((idx, entry))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(run_one, entry): idx for idx, entry in pending}
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Generating pages"):
+            idx = futures[future]
+            results[idx] = future.result()
+
+    ordered = [results[i] for i in range(len(to_process)) if i in results]
+
     if not overwrite and len(to_process) < len(originals):
         for entry in originals[len(to_process) :]:
             key = str(entry["book_id"])
             if key in existing_map:
-                results.append(existing_map[key])
-    write_records(results)
+                ordered.append(existing_map[key])
+
+    write_records(ordered)
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate GPT-5.1 first pages.")
     parser.add_argument("--max-records", type=int, help="Limit how many books to process.")
     parser.add_argument("--overwrite", action="store_true", help="Regenerate even if already present.")
+    parser.add_argument("--workers", type=int, default=30, help="Parallel workers for generation.")
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[List[str]] = None) -> None:
     args = parse_args(argv)
-    generate(max_records=args.max_records, overwrite=args.overwrite)
+    generate(max_records=args.max_records, overwrite=args.overwrite, workers=args.workers)
     print(f"Wrote generations to {GENERATED_PATH}")
 
 
