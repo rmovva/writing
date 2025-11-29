@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM vs. Author Passages</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Guess the Author</p>
+        <h1>First-passages: Author or LLM?</h1>
+        <p class="lede">Read two versions of an opening passage. One is the real book, the other is GPT-5.1. Pick which one is human. After 10 pairs, see your score and the answers.</p>
+      </div>
+      <div class="controls">
+        <label for="pair-count">Pairs</label>
+        <input id="pair-count" type="number" min="1" max="20" value="10">
+        <label for="seed">Seed (optional)</label>
+        <input id="seed" type="number" placeholder="random">
+        <button id="start-btn" class="primary">Start quiz</button>
+      </div>
+    </header>
+
+    <main id="quiz-area" class="card hidden">
+      <div class="quiz-header">
+        <div>
+          <p id="book-meta" class="meta"></p>
+          <p id="progress" class="progress"></p>
+        </div>
+        <div class="actions">
+          <button id="restart-btn" class="ghost">Restart</button>
+        </div>
+      </div>
+
+      <div class="passages">
+        <div class="passage">
+          <div class="passage-header">A</div>
+          <div id="text-a" class="passage-body"></div>
+          <label class="choice">
+            <input type="radio" name="choice" value="A">
+            <span>Select A</span>
+          </label>
+        </div>
+        <div class="passage">
+          <div class="passage-header">B</div>
+          <div id="text-b" class="passage-body"></div>
+          <label class="choice">
+            <input type="radio" name="choice" value="B">
+            <span>Select B</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div id="status-msg" class="status"></div>
+        <button id="next-btn" class="primary" disabled>Next</button>
+      </div>
+    </main>
+
+    <section id="results" class="card hidden">
+      <h2>Your results</h2>
+      <p id="summary"></p>
+      <div id="review"></div>
+      <button id="play-again" class="primary">Play again</button>
+    </section>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

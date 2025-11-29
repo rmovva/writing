@@ -5,6 +5,7 @@ This repo builds a simple experiment comparing the first passage of public-domai
 1) **Fetch openings**: grab the first ~500 words of ~100 lesser-known works by famous authors from Project Gutenberg (via Gutendex).
 2) **Generate model passages**: ask `gpt-5.1` (key from `$OAI_RLHF`) to write similarly-styled first passages.
 3) **Run the demo**: play through 10 random A/B pairs, guess which is human vs GPT, then review the answers.
+4) **(New) Web app**: a small Flask app to play the quiz in the browser.
 
 ## Setup
 
@@ -45,6 +46,15 @@ python scripts/run_demo.py --pairs 10 --seed 7
 ```
 
 The script randomly chooses pairs where both the original and GPT passages exist, shuffles A/B order, tallies your picks, and then shows the accuracy plus a labeled review of each pair.
+
+## 4) Browser-based quiz
+
+```
+export FLASK_APP=app.py
+flask run  # defaults to http://127.0.0.1:5000
+```
+
+The web UI fetches 10 random pairs (configurable) and runs the same quiz in the browser. Adjust the number of pairs or provide a seed in the top-right controls.
 
 ## Data snapshot
 
