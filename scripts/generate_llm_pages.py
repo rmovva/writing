@@ -102,7 +102,7 @@ def generate(max_records: Optional[int] = None, overwrite: bool = False) -> None
         response = client.responses.create(
             model=MODEL_NAME,
             input=[{"role": "user", "content": prompt}],
-            reasoning_effort="low",
+            reasoning={"effort": "none"},
             verbosity="low",
         )
         generated_text = extract_text(response)
