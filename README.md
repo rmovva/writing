@@ -3,7 +3,7 @@
 This repo builds a simple experiment comparing the first passage of public-domain novels with GPT-written counterparts. The pipeline is split into three scripts:
 
 1) **Fetch openings**: grab the first ~500 words of ~100 lesser-known works by famous authors from Project Gutenberg (via Gutendex).
-2) **Generate model passages**: ask `gpt-5.1` (key from `$OAI_RLHF`) to write similarly-styled first passages.
+2) **Generate model passages**: ask `gpt-5.1` to write similarly-styled first passages.
 3) **Run the demo**: play through 10 random A/B pairs, guess which is human vs GPT, then review the answers.
 4) **(New) Web app**: a small Flask app to play the quiz in the browser.
 
@@ -21,7 +21,6 @@ export OAI_RLHF=your_openai_api_key  # needed for generation
 ```
 python scripts/fetch_openings.py --limit 100 --seed 123 --max-words 500
 # optionally clean passages to strip Gutenberg metadata/TOCs via GPT-5-nano
-# export OAI_RLHF=your_key
 # python scripts/fetch_openings.py --limit 100 --seed 123 --clean-with-llm
 ```
 
