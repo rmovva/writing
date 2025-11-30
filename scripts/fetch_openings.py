@@ -28,6 +28,8 @@ METADATA_PATH = DATA_DIR / "book_metadata.json"
 OPENINGS_PATH = DATA_DIR / "original_openings.jsonl"
 DEFAULT_LIMIT = 100
 DEFAULT_WORDS = 500
+RAW_DEFAULT_WORDS = 1500
+NO_TEXT_MARKER = "[no text extracted]"
 
 
 # Famous authors with instructions to skip the obvious works.
@@ -152,13 +154,15 @@ def extract_opening(text: str, max_words: int = DEFAULT_WORDS) -> str:
     return "\n\n".join(selected)
 
 
-def clean_with_llm(passage: str, client: OpenAI) -> str:
+def clean_with_llm(passage: str, client: OpenAI, target_words: int = DEFAULT_WORDS) -> str:
     """Use GPT-5-nano to strip TOCs/metadata and keep only prose."""
     system_prompt = (
         "You are a cleaner that receives the opening of a public-domain book. "
         "Remove any metadata, table of contents, prefaces, headings, or boilerplate. "
         "Return only the first prose passage that starts the story, keeping paragraphs intact. "
         "Merge wrapped lines inside paragraphs so each paragraph is a contiguous block of text. "
+        f"Aim for about {target_words} words from the start of the story. "
+        f"If you cannot find any story text, output exactly {NO_TEXT_MARKER}. "
         "Do not add commentary or labels."
     )
     try:
@@ -181,7 +185,16 @@ def clean_with_llm(passage: str, client: OpenAI) -> str:
                         if content.get("type") == "output_text":
                             cleaned = content.get("text", "")
                             break
-        return cleaned.strip() or passage
+        cleaned = cleaned.strip()
+        if not cleaned:
+            return NO_TEXT_MARKER
+        if NO_TEXT_MARKER.lower() in cleaned.lower():
+            return NO_TEXT_MARKER
+        # Ensure we don't exceed target length too much.
+        words = cleaned.split()
+        if len(words) > target_words + 100:
+            cleaned = " ".join(words[: target_words + 100])
+        return cleaned
     except Exception as exc:
         print(f"LLM clean failed, keeping raw passage: {exc}", file=sys.stderr)
         return passage
@@ -295,6 +308,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Fetch first pages for public-domain novels.")
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="Total number of books to collect.")
     parser.add_argument("--max-words", type=int, default=DEFAULT_WORDS, help="Approximate word count for openings.")
+    parser.add_argument("--raw-words", type=int, default=RAW_DEFAULT_WORDS, help="Word budget to pull before cleaning.")
     parser.add_argument("--seed", type=int, default=42, help="Shuffle seed when trimming the list.")
     parser.add_argument("--clean-with-llm", action="store_true", help="Use GPT-5-nano to clean passages.")
     return parser.parse_args(argv)
@@ -320,8 +334,9 @@ def main(argv: Optional[List[str]] = None) -> None:
     print(f"Fetching openings for {len(records)} books...")
     for record in tqdm(records, desc="Downloading texts"):
         try:
-            raw = fetch_opening_text(record, args.max_words)
-            openings[record.book_id] = clean_with_llm(raw, client) if client else raw
+            fetch_words = args.raw_words if client else args.max_words
+            raw = fetch_opening_text(record, fetch_words)
+            openings[record.book_id] = clean_with_llm(raw, client, target_words=args.max_words) if client else raw
         except Exception as exc:
             print(f"Failed to fetch {record.title} ({record.book_id}): {exc}", file=sys.stderr)
             openings[record.book_id] = ""

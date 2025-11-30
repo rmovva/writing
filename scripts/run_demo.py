@@ -13,6 +13,7 @@ from typing import Dict, List
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 ORIGINAL_PATH = DATA_DIR / "original_openings.jsonl"
 GENERATED_PATH = DATA_DIR / "generated_openings.jsonl"
+NO_TEXT_MARKER = "[no text extracted]"
 
 
 @dataclass
@@ -38,7 +39,12 @@ def load_jsonl(path: Path) -> List[Dict]:
 def build_pairs(count: int, seed: int | None) -> List[Pair]:
     originals = {str(row["book_id"]): row for row in load_jsonl(ORIGINAL_PATH)}
     generated = {str(row["book_id"]): row for row in load_jsonl(GENERATED_PATH)}
-    common_ids = sorted(set(originals.keys()) & set(generated.keys()))
+    common_ids = sorted(
+        book_id
+        for book_id in set(originals.keys()) & set(generated.keys())
+        if originals[book_id].get("original_opening", "").strip() != NO_TEXT_MARKER
+        and generated[book_id].get("gpt_opening", "").strip() != NO_TEXT_MARKER
+    )
     if len(common_ids) < count:
         raise ValueError(f"Need {count} pairs but only {len(common_ids)} have generations.")
     rng = random.Random(seed)

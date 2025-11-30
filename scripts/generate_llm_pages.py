@@ -17,6 +17,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 ORIGINAL_PATH = DATA_DIR / "original_openings.jsonl"
 GENERATED_PATH = DATA_DIR / "generated_openings.jsonl"
 MODEL_NAME = "gpt-5.1"
+NO_TEXT_MARKER = "[no text extracted]"
 
 
 def load_originals() -> List[Dict]:
@@ -81,7 +82,7 @@ def generate(max_records: Optional[int] = None, overwrite: bool = False, workers
     existing_map = load_existing()
     client = make_client()
 
-    to_process = originals[: max_records or len(originals)]
+    to_process = [entry for entry in originals[: max_records or len(originals)] if entry.get("original_opening", "").strip() != NO_TEXT_MARKER]
     results: Dict[int, Dict] = {}
     pending: List[tuple[int, Dict]] = []
 
